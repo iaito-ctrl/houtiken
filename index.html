@@ -1319,10 +1319,11 @@ function tutTick(dt){
     return}
   if(B.mode!=="stage"||B.stage!==0||t>=10){coach(null);pulse(null);return}
   pulse(t===3?"#dodgeBtn":null);
+  if(t===3){TUT.d=(TUT.d||0)+dt;if(TUT.d>8)S.tut=4}
   if(t===1){coach("画面をなぞって歩こう");if(B.p.mv)TUT.mv+=dt;if(TUT.mv>1.2)S.tut=2}
   else if(t>=2&&t<=5&&B.sk>=C.cd&&!TUT.sk&&!S.autoSk){coach("2回タップで必殺技!")}
   else if(t===2){coach("敵に近づくと自動でこうげき!");if(B.kills>=4)S.tut=3}
-  else if(t===3){coach("はじくと回避!(右下のボタンでもOK)");TUT.d=(TUT.d||0)+dt;if(TUT.d>8)S.tut=4}
+  else if(t===3){coach("はじくと回避!(右下のボタンでもOK)")}
   else if(t===4){coach("敵をたおすとボスが来るよ");if(B.boss)S.tut=5}
   else if(t===5){coach("赤いところからにげよう!")}
 }
@@ -1972,7 +1973,7 @@ function renderDock(){
   $("navHome").hidden=!home;$("mBtn").hidden=!home;$("chestBtn").hidden=!home;mDot();$("navBattle").hidden=!inb;$("dodgeBtn").hidden=!inb;
   if(home){$("prev").disabled=S.sel<=0;$("next").disabled=S.sel>=S.clr;$("go").innerHTML=`出発!<small>${stName(S.sel)} ${stRealm(S.sel).n}${S.sel<S.clr?" "+starTxt(S.stars[S.sel]||0):""}</small>`}
   $("dock").classList.toggle("dim",B.mode==="result");
-  if($("app").classList.contains("inb")!==inb){$("app").classList.toggle("inb",inb);try{resize()}catch(e){}}
+  $("app").classList.toggle("inb",inb);if(renderDock.m!==B.mode){renderDock.m=B.mode;setTimeout(()=>{try{resize()}catch(e){}})} /* right after this update, once the HUD shows what this screen shows */
 }
 $("prev").onclick=()=>{if(S.sel>0){S.sel--;renderDock();hud();save()}};
 $("next").onclick=()=>{if(S.sel<S.clr){S.sel++;renderDock();hud();save()}};
