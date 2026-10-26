@@ -932,7 +932,8 @@ function mkBoss(L,hpMul,acts,x,y){
 function spawnStageBoss(){
   const n=B.stage,L=stL(n),last=stLast(n),P=B.p;
   const b=mkBoss(L,last?30:18,last?["dash","slam","ring","fan","cross","donut","rain","sweep"]:["dash","slam","fan","cross","rain","sweep"],P.x,Math.max(40,P.y-200));
-  b.nm=last?stRealm(n).b:stRealm(n).e+"のまとめ役";b.r=last?28:24;B.es.push(b);B.boss=b;
+  b.nm=last?stRealm(n).b:stRealm(n).e+"のまとめ役";b.r=last?28:24;
+  if(S.tut<10){b.tut=1;b.hp=b.mx=Math.round(b.mx*.25);b.atk*=.2;b.spd*=.8;b.acts=["slam"]}B.es.push(b);B.boss=b;
   B.ban={t:"ボスのお出ましだ!",l:1.8,c:"#d8483a"};sfx("boss");B.php=Math.min(C.hp,B.php+C.hp*.3);fx("+"+fmt(C.hp*.3),"heal",B.p.x,B.p.y-24);
 }
 const ONO={crit:["ズバッ","バシッ","ザクッ","ガツン"],skill:["ドカッ","ズドン","バコッ"],boss:["ドーン!!","やった!"]};let onoT=0;
@@ -1112,8 +1113,8 @@ function bossAI(b,dt,ts){
   else if(AREA_N[b.act]){b.wind-=dt;if(b.wind<=0)b.act=null}
   else if(b.act==="fan"){b.wind-=dt;if(b.wind<=0){b.act=null;sfx("ring");const n=rg?9:7,a0=Math.atan2(b.fdy,b.fdx);for(let i=0;i<n;i++){const a=a0+(i/(n-1)-.5)*1.4;B.eps.push({x:b.x,y:b.y,vx:Math.cos(a)*165,vy:Math.sin(a)*165,r:6,dmg:b.atk*.7,life:3})}}}
   else{b.at-=dt;const sp=b.spd*(rg?1.35:1);b.x+=dx/d*sp*dt;b.y+=dy/d*sp*dt;
-    if(b.at<=0){const a=b.acts[Math.floor(Math.random()*b.acts.length)];b.act=a;b.at=(1.2+Math.random()*1)*(rg?.65:1);
-      if(a==="dash"){b.wind=rg?.6:.75;b.dx=dx/d;b.dy=dy/d}else if(a==="slam"){b.wind=rg?.85:1.1;b.sx=t.x;b.sy=t.y;b.sr=rg?150:115}else if(a==="fan"){b.wind=rg?.4:.55;b.fdx=dx/d;b.fdy=dy/d}else if(a==="ring"){b.wind=.6}else{b.wind=bossArea(b,a,t,rg);bossCut(b,AREA_N[a].replace("!",""),rg)}}}
+    if(b.at<=0){const a=b.acts[Math.floor(Math.random()*b.acts.length)];b.act=a;b.at=(1.2+Math.random()*1)*(rg?.65:1)*(b.tut?1.6:1);
+      if(a==="dash"){b.wind=rg?.6:.75;b.dx=dx/d;b.dy=dy/d}else if(a==="slam"){b.wind=rg?.85:1.1;b.sx=t.x;b.sy=t.y;b.sr=b.tut?80:rg?150:115}else if(a==="fan"){b.wind=rg?.4:.55;b.fdx=dx/d;b.fdy=dy/d}else if(a==="ring"){b.wind=.6}else{b.wind=bossArea(b,a,t,rg);bossCut(b,AREA_N[a].replace("!",""),rg)}}}
   /* in a rage: a second ring wave just after the first (a counter, so a raid stays in step), and minions called in every few seconds */
   if(b.r2>0){b.r2-=dt;if(b.r2<=0){b.ra+=Math.PI/22;b.ri++}}
   if(rg&&B.mode!=="strong"){b.sm=(b.sm||0)-dt;if(b.sm<=0&&B.es.length<50){b.sm=9;const n=stLast(B.stage)?6:4;for(let i=0;i<n;i++){const e=mkFoe(),a=i/n*Math.PI*2;e.x=Math.max(20,Math.min(MW-20,b.x+Math.cos(a)*50));e.y=Math.max(20,Math.min(MH-20,b.y+Math.sin(a)*40));B.es.push(e)}fx("手下を呼んだ!","word",b.x,b.y-40)}}
@@ -1179,7 +1180,7 @@ function drawZones(c){if(!B.zones||!B.zones.length)return;c.save();
       path(pr);c.fillStyle="rgba(255,70,50,.3)";c.fill("evenodd")}}
   c.restore()}
 function onSlam(b){sfx("slam");shake(6);B.rings.push({x:b.sx,y:b.sy,r:10,max:b.sr,t:.45,col:"255,90,60"});if(Math.hypot(B.p.x-b.sx,B.p.y-b.sy)<b.sr)hurtMe(b.atk,2.2)}
-const bossRage=b=>b.hp<b.mx*.5;
+const bossRage=b=>!b.tut&&b.hp<b.mx*.5;
 const AREA_N={cross:"十字斬り!",donut:"輪の衝撃!",rain:"落雷!",sweep:"なぎ払い!"};
 function onRing(b){sfx("ring");const n=bossRage(b)?22:14;for(let i=0;i<n;i++){const a=b.ra+i/n*Math.PI*2;B.eps.push({x:b.x,y:b.y,vx:Math.cos(a)*95,vy:Math.sin(a)*95,r:6,dmg:b.atk*.8,life:3.5})}}
 
@@ -1265,7 +1266,7 @@ const KINDS={
 const REALM_KINDS=[[["split",.3]],[["dash",.3]],[["shoot",.3]],[["warp",.3]],[["tank",.2],["dash",.15]],[["web",.3]],[["dash",.2],["shoot",.15]],[["tank",.2],["shoot",.15]],[["bomb",.3]],[["warp",.2],["shoot",.15]],[["tank",.2],["bomb",.15]],[["warp",.15],["dash",.15],["shoot",.15]]];
 const KIND_N={shoot:"遠くから撃つ",dash:"突進する",split:"倒すと分裂する",warp:"瞬間移動する",web:"糸で動きを遅くする",bomb:"近づいて自爆する",tank:"硬くて吹き飛ばない"};
 function pickKind(n){if(S.tut<10)return"chase";const ks=REALM_KINDS[(stCh(n)-1)%12];let r=Math.random();for(const[k,w]of ks){if(r<w)return k;r-=w}return"chase"}
-function applyKind(e,ty){const K=KINDS[ty]||{};e.ty=ty;e.hp*=K.hp||1;e.mx=e.hp;e.r=K.r||e.r;e.atk*=K.atk||1;if(K.spd)e.spd=K.spd+Math.random()*6;e.st=1.5+Math.random()*2;e.vis=1;e.hp*=SWARM.hp;e.mx=e.hp;e.atk*=SWARM.atk;if(S.tut<10)e.atk*=.6;return e}
+function applyKind(e,ty){const K=KINDS[ty]||{};e.ty=ty;e.hp*=K.hp||1;e.mx=e.hp;e.r=K.r||e.r;e.atk*=K.atk||1;if(K.spd)e.spd=K.spd+Math.random()*6;e.st=1.5+Math.random()*2;e.vis=1;e.hp*=SWARM.hp;e.mx=e.hp;e.atk*=SWARM.atk;if(S.tut<10)e.atk*=.2;return e}
 function enemyAI(e,dt,dx,dy,d){
   const p=B.p,v=e.spd*(e.sl||1),go=s=>{if(s>0&&(d<e.r+7||(d<e.r+58&&d>B.ringD)))return;e.x+=dx/d*v*s*dt;e.y+=dy/d*v*s*dt};
   switch(e.ty){
