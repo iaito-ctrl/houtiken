@@ -312,6 +312,13 @@ button:focus-visible,input:focus-visible{outline:3px dashed var(--red);outline-o
 .tgl input{appearance:none;-webkit-appearance:none;flex:none;width:50px;height:28px;border-radius:14px;background:var(--paper3);border:2px solid var(--ink);position:relative;cursor:pointer;transition:background .15s}
 .tgl input::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--paper);border:2px solid var(--ink);transition:transform .15s}
 .tgl input:checked{background:var(--leaf)}.tgl input:checked::after{transform:translateX(21px)}
+/* in battle the field gets the room: no money row or menu tabs, a small retreat button, notices low down */
+#app.inb .top{display:none}
+#app.inb .runrow{margin:4px 2px}
+#app.inb .tabs{display:none}
+#app.inb #navBattle{margin-bottom:0;justify-content:flex-start}
+#app.inb #retreat{flex:none;padding:6px 14px;font-size:13px}
+#app.inb .toast{top:auto;bottom:calc(var(--dockh,140px) + 84px);font-size:12px;padding:5px 12px 5px 9px}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -358,7 +365,7 @@ button:focus-visible,input:focus-visible{outline:3px dashed var(--red);outline-o
 </div></div>
 
 <button class="gem gold enterb" id="enterBtn" hidden></button>
-<p class="hint glass" id="hint">ドラッグで移動、指で弾くと回避、ダブルタップで戦技(PCは矢印キー・スペース・E)。</p>
+<p class="hint glass off" id="hint"></p>
 <button class="dodge" id="dodgeBtn" hidden aria-label="回避"><svg class="ico"><use href="#i-dodge"/></svg><small id="dodgeN"></small></button>
 
 <section class="sheet glass" id="sheet" hidden>
@@ -1085,7 +1092,9 @@ function step(dt){
     else enemyAI(e,dt,dx,dy,d);
     if(e.hp<=0)continue;
     e.x=Math.max(16,Math.min(MW-16,e.x));e.y=Math.max(16,Math.min(MH-16,e.y));
-    if(d<e.r+9&&e.cd<=0&&(e.vis??1)>.5){e.cd=1.2;hurtMe(e.atk*(e.boss?1:1.7),e.dash>0?1.8:1); /* fewer foes reach the hero now that the rest wait in a ring, so each hits harder */if(B.mode!=="stage")return}
+    /* a bite winds up for a moment (red ring and !) so you can see it coming and step away; dashes and bosses hit at once */
+    if(e.atkw>0){e.atkw-=dt;if(e.atkw<=0){e.cd=1.2;if(d<e.r+16&&(e.vis??1)>.5){hurtMe(e.atk*1.9,1);if(B.mode!=="stage")return}}}
+    else if(d<e.r+9&&e.cd<=0&&(e.vis??1)>.5){if(e.boss||e.dash>0){e.cd=1.2;hurtMe(e.atk*(e.boss?1:1.9),e.dash>0?1.8:1);if(B.mode!=="stage")return}else e.atkw=ATKW}
   }
   const es=B.es;
   for(let i=0;i<es.length;i++)for(let j=i+1;j<es.length;j++){const a=es[i],b=es[j],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),m=(a.r+b.r)*1.25;if(d>0&&d<m){const kk=(m-d)/d*.5;if(!a.boss){a.x-=dx*kk;a.y-=dy*kk}if(!b.boss){b.x+=dx*kk;b.y+=dy*kk}}}
@@ -1246,8 +1255,11 @@ function enemyAI(e,dt,dx,dy,d){
 function onFoeDeath(e){
   if(e.ty==="split"){for(let i=0;i<2;i++){const c=mkFoe("mini");c.x=e.x+(i?8:-8);c.y=e.y;c.age=.3;B.es.push(c)}}
 }
+const ATKW=.4;
 function drawFoeTele(c,e){
   if(e.boss)return;
+  if(e.atkw>0){const[x,y,k]=proj(e.x,e.y),pr=1-e.atkw/ATKW,r=(e.r+12)*k;c.save();c.fillStyle=`rgba(216,72,58,${.2+.35*pr})`;c.strokeStyle="#d8483a";c.lineWidth=2;c.beginPath();c.ellipse(x,y,r,r*.62,0,0,7);c.fill();c.stroke();c.restore()}
+  if((e.ty==="shoot"||e.ty==="web")&&e.wind>0){const a=proj(e.x,e.y),b=proj(B.p.x,B.p.y);c.save();c.strokeStyle=e.ty==="web"?"rgba(240,236,228,.9)":"rgba(255,80,60,.85)";c.lineWidth=2;c.setLineDash([6,5]);c.beginPath();c.moveTo(a[0],a[1]-9*a[2]);c.lineTo(b[0],b[1]-9*b[2]);c.stroke();c.restore()}
   if(e.ty==="dash"&&e.wind>0){const L=70,a=proj(e.x,e.y),b=proj(e.x+e.ddx*L,e.y+e.ddy*L);c.strokeStyle="rgba(255,80,60,.8)";c.lineWidth=e.r*1.4*a[2];c.globalAlpha=.35;c.lineCap="round";c.beginPath();c.moveTo(a[0],a[1]);c.lineTo(b[0],b[1]);c.stroke();c.globalAlpha=1}
   if(e.ty==="bomb"&&e.fuse>0){const[x,y,k]=proj(e.x,e.y),pr=1-e.fuse/.8;c.fillStyle="rgba(255,90,40,.18)";c.strokeStyle="rgba(255,120,60,.9)";c.lineWidth=1.5;c.beginPath();c.ellipse(x,y,46*k,46*k*.62,0,0,7);c.fill();c.stroke();c.fillStyle="rgba(255,90,40,.3)";c.beginPath();c.ellipse(x,y,46*k*pr,46*k*.62*pr,0,0,7);c.fill()}
   if(e.ty==="warp"&&e.wp>0){const[x,y,k]=proj(e.tx,e.ty2);c.strokeStyle="rgba(190,140,255,.8)";c.lineWidth=1.5;c.beginPath();c.ellipse(x,y,14*k,9*k,0,0,7);c.stroke()}
@@ -1300,19 +1312,19 @@ function pulse(sel){document.querySelectorAll(".pulse").forEach(x=>{if(!sel||!x.
 function tutTick(dt){
   const t=S.tut;if(t>=99){coach(null);pulse(null);return}
   if(B.mode==="home"){
-    if(t<10){coach("はじめまして!まずは下の「出発」で、近くの沼まで行ってみよう");pulse("#go")}
-    else if(t===10){coach("拾ったどんぐりでレベルが上がるよ。下の「能力」をひらいてみて");pulse('.tabs button[data-t="stat"]');if(tab==="stat"){S.tut=11;save()}}
-    else if(t===11){coach(tab==="stat"?"「レベルを上げる」を押してから、好きな能力の +1 を押そう":"下の「能力」から、ポイントを振れます");pulse(tab==="stat"?(pts()>0?".item.stat button[data-n='1']":"#lvup"):'.tabs button[data-t="stat"]');
+    if(t<10){coach("「出発!」をおしてね");pulse("#go")}
+    else if(t===10){coach("どんぐりでレベルアップ!「能力」をおしてね");pulse('.tabs button[data-t="stat"]');if(tab==="stat"){S.tut=11;save()}}
+    else if(t===11){coach(tab==="stat"?"「レベルを上げる」→ すきな「+1」":"「能力」をおしてね");pulse(tab==="stat"?(pts()>0?".item.stat button[data-n='1']":"#lvup"):'.tabs button[data-t="stat"]');
       if(spent()>0){S.tut=99;save();toast("準備ばっちり。あとは好きに進もう",2);coach(null);pulse(null)}}
     return}
   if(B.mode!=="stage"||B.stage!==0||t>=10){coach(null);pulse(null);return}
   pulse(t===3?"#dodgeBtn":null);
-  if(t===1){coach("画面をなぞると歩くよ(PCは矢印キー)");if(B.p.mv)TUT.mv+=dt;if(TUT.mv>1.2)S.tut=2}
-  else if(t>=2&&t<=5&&B.sk>=C.cd&&!TUT.sk&&!S.autoSk){coach("戦技がたまった!画面をトントンと2回たたいてみて")}
-  else if(t===2){coach("近づけば勝手に攻撃するよ。立ち止まると手が速くなる");if(B.kills>=4)S.tut=3}
-  else if(t===3){coach("指でシュッとはじくと回避。その間は攻撃が当たらない(スペースキーか右下のボタンでも)")}
-  else if(t===4){coach("敵を倒して上のゲージがたまると、ボスが出てくる");if(B.boss)S.tut=5}
-  else if(t===5){coach(B.boss&&B.boss.act?"赤いところから回避で逃げて!":"ボスを倒せばクリア。床が赤くなったら回避!")}
+  if(t===1){coach("画面をなぞって歩こう");if(B.p.mv)TUT.mv+=dt;if(TUT.mv>1.2)S.tut=2}
+  else if(t>=2&&t<=5&&B.sk>=C.cd&&!TUT.sk&&!S.autoSk){coach("2回タップで必殺技!")}
+  else if(t===2){coach("敵に近づくと自動でこうげき!");if(B.kills>=4)S.tut=3}
+  else if(t===3){coach("はじくと回避!(右下のボタンでもOK)");TUT.d=(TUT.d||0)+dt;if(TUT.d>8)S.tut=4}
+  else if(t===4){coach("敵をたおすとボスが来るよ");if(B.boss)S.tut=5}
+  else if(t===5){coach("赤いところからにげよう!")}
 }
 
 /* ================= special skills: one per weapon type, each with its own motion ================= */
@@ -1897,7 +1909,8 @@ function drawScene(t,dt){
     if(B.roll>0){c.save();c.strokeStyle=INK;c.lineWidth=1.6;c.lineCap="round";for(const o of[-7,0,7]){c.beginPath();c.moveTo(hx-B.rdx*14*hk+o*B.rdy,hy-16*hk+o*.6*B.rdx-B.rdy*8*hk);c.lineTo(hx-B.rdx*34*hk+o*B.rdy,hy-16*hk+o*.6*B.rdx-B.rdy*20*hk);c.stroke()}c.restore()}}]);
   if(curPet()>=0&&B.mode!=="result")L.push([PT_.y,()=>{const[x,y,k]=proj(PT_.x,PT_.y);c.fillStyle="rgba(0,0,0,.28)";c.beginPath();c.ellipse(x,y+2,9*k,3*k,0,0,7);c.fill();drawPet(c,curPet(),x,y-22*k,16*k,t)}]);
   if(PT_.sh&&B.mode!=="home"){c.save();c.strokeStyle="#4f8ac2";c.lineWidth=2;c.setLineDash([4,4]);c.lineDashOffset=t*20;c.beginPath();c.ellipse(hx,hy-20*hk,22*hk,28*hk,0,0,7);c.stroke();c.restore()}
-  L.sort((a,b)=>a[0]-b[0]).forEach(q=>q[1]());if(B.mode==="home")campNight(c,t);
+  L.sort((a,b)=>a[0]-b[0]).forEach(q=>q[1]());
+  for(const e of B.es)if(!e.boss&&(e.atkw>0||((e.ty==="shoot"||e.ty==="web"||e.ty==="dash")&&e.wind>0))){const[x,y,k]=proj(e.x,e.y),yy=y-e.r*3*k-8;c.save();c.font=`900 ${Math.round(16*k)}px ${HAND}`;c.textAlign="center";c.textBaseline="middle";c.lineWidth=4;c.strokeStyle="#fffaf0";c.strokeText("!",x,yy);c.fillStyle="#d8483a";c.fillText("!",x,yy);c.restore()}if(B.mode==="home")campNight(c,t);
   for(const q of B.ps){const[x,y,k]=proj(q.x,q.y),[x2,y2]=proj(q.x+q.vx*.01,q.y+q.vy*.01);
     c.fillStyle="rgba(0,0,0,.25)";c.beginPath();c.ellipse(x,y,q.r*.6*k,q.r*.25*k,0,0,7);c.fill();
     c.save();c.translate(x,y-10*k);c.rotate(Math.atan2(y2-y,x2-x));c.scale(k,k);c.lineJoin="round";
@@ -1914,7 +1927,7 @@ function drawScene(t,dt){
     c.restore()}
   for(const a of B.acts)if(a.drw)a.drw(c,t,a);
   for(const q of B.eps){const[x,y,k]=proj(q.x,q.y);c.fillStyle="rgba(0,0,0,.25)";c.beginPath();c.ellipse(x,y,q.r*.8*k,q.r*.3*k,0,0,7);c.fill();
-    c.save();c.strokeStyle=INK;c.lineWidth=1.8;if(q.web){c.fillStyle="#f5ecd6";c.beginPath();c.arc(x,y-9*k,q.r*1.2*k,0,7);c.fill();c.stroke();c.lineWidth=1;for(let i=0;i<3;i++){c.beginPath();c.moveTo(x-q.r*1.2*k*Math.cos(i),y-9*k-q.r*1.2*k*Math.sin(i));c.lineTo(x+q.r*1.2*k*Math.cos(i),y-9*k+q.r*1.2*k*Math.sin(i));c.stroke()}}else{c.fillStyle="#d8483a";c.beginPath();c.arc(x,y-9*k,q.r*1.25*k,0,7);c.fill();c.stroke();c.fillStyle="#ffe7c4";c.beginPath();c.arc(x-q.r*.4*k,y-9*k-q.r*.4*k,q.r*.38*k,0,7);c.fill()}c.restore()}
+    c.save();c.fillStyle=q.web?"rgba(240,236,228,.35)":"rgba(255,90,60,.3)";c.beginPath();c.arc(x,y-9*k,q.r*2.4*k,0,7);c.fill();c.strokeStyle=INK;c.lineWidth=2;if(q.web){c.fillStyle="#f5ecd6";c.beginPath();c.arc(x,y-9*k,q.r*1.2*k,0,7);c.fill();c.stroke();c.lineWidth=1;for(let i=0;i<3;i++){c.beginPath();c.moveTo(x-q.r*1.2*k*Math.cos(i),y-9*k-q.r*1.2*k*Math.sin(i));c.lineTo(x+q.r*1.2*k*Math.cos(i),y-9*k+q.r*1.2*k*Math.sin(i));c.stroke()}}else{c.fillStyle="#d8483a";c.beginPath();c.arc(x,y-9*k,q.r*1.5*k,0,7);c.fill();c.stroke();c.fillStyle="#ffe7c4";c.beginPath();c.arc(x-q.r*.4*k,y-9*k-q.r*.4*k,q.r*.38*k,0,7);c.fill()}c.restore()}
   B.sparks=B.sparks.filter(s=>{s.t-=dt;s.x+=s.vx*dt;s.y+=s.vy*dt;const[x,y,k]=proj(s.x,s.y);c.save();c.globalAlpha=Math.min(1,s.t*4);c.translate(x,y-12*k);c.rotate(Math.atan2(s.vy,s.vx));c.fillStyle="#fff4d6";c.strokeStyle=INK;c.lineWidth=1;c.beginPath();c.moveTo(4,0);c.lineTo(-3,-2);c.lineTo(-3,2);c.closePath();c.fill();c.stroke();c.restore();return s.t>0});
   c.textAlign="center";c.textBaseline="middle";c.lineJoin="round";
   if(B.ban){B.ban.l-=dt;c.globalAlpha=Math.max(0,Math.min(1,B.ban.l*3));banner(c,B.ban.t,W/2,H*.36,B.ban.c);c.globalAlpha=1;if(B.ban.l<=0)B.ban=null}
@@ -1959,6 +1972,7 @@ function renderDock(){
   $("navHome").hidden=!home;$("mBtn").hidden=!home;$("chestBtn").hidden=!home;mDot();$("navBattle").hidden=!inb;$("dodgeBtn").hidden=!inb;
   if(home){$("prev").disabled=S.sel<=0;$("next").disabled=S.sel>=S.clr;$("go").innerHTML=`出発!<small>${stName(S.sel)} ${stRealm(S.sel).n}${S.sel<S.clr?" "+starTxt(S.stars[S.sel]||0):""}</small>`}
   $("dock").classList.toggle("dim",B.mode==="result");
+  if($("app").classList.contains("inb")!==inb){$("app").classList.toggle("inb",inb);try{resize()}catch(e){}}
 }
 $("prev").onclick=()=>{if(S.sel>0){S.sel--;renderDock();hud();save()}};
 $("next").onclick=()=>{if(S.sel<S.clr){S.sel++;renderDock();hud();save()}};
@@ -2166,7 +2180,7 @@ $("sndBtn").onclick=()=>{auInit();AU.mute=!AU.mute;auVol();auSave();sndBtn()};sn
 
 /* ================= toast & reset ================= */
 const tq=[];let tOn=false;
-function toast(msg,q){tq.push([msg,q]);if(tq.length>4)tq.shift();if(!tOn)nextToast()}
+function toast(msg,q){if((B.mode==="stage"||B.mode==="strong")&&/預けた/.test(msg))return;tq.push([msg,q]);if(tq.length>4)tq.shift();if(!tOn)nextToast()}
 function nextToast(){const t=$("toast"),m=tq.shift();if(!m){t.hidden=true;tOn=false;return}tOn=true;t.textContent=m[0];t.className="toast glass"+(m[1]>0?" r"+m[1]:"");t.hidden=false;setTimeout(nextToast,2400)}
 let armT=0;
 $("reset").onclick=()=>{const b=$("reset");
