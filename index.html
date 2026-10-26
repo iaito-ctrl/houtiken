@@ -319,6 +319,10 @@ button:focus-visible,input:focus-visible{outline:3px dashed var(--red);outline-o
 #app.inb #navBattle{margin-bottom:0;justify-content:flex-start}
 #app.inb #retreat{flex:none;padding:6px 14px;font-size:13px}
 #app.inb .toast{top:auto;bottom:calc(var(--dockh,140px) + 84px);font-size:12px;padding:5px 12px 5px 9px}
+.rkrow{grid-template-columns:minmax(0,1fr) auto}
+.rkrow.me{background:#fbefc9}
+.rkn{display:inline-block;min-width:1.6em;color:var(--red)}
+.rkv{font:400 18px var(--hand);color:var(--ink)}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -352,7 +356,7 @@ button:focus-visible,input:focus-visible{outline:3px dashed var(--red);outline-o
     <div class="chip pw"><small>総合力</small><b id="tpow">0</b></div>
     <button class="snd" id="sndBtn" aria-label="音を消す"></button>
   </header>
-  <div class="placerow"><div class="place"><span id="pname"></span><small id="ename"></small></div><div class="prr"><div class="timer" id="timer" hidden></div><button class="mpill" id="mBtn" hidden><svg class="ico"><use href="#i-check"/></svg>ミッション <b id="mCnt"></b><span class="dot" id="mDot" hidden></span></button><button class="mpill chest" id="chestBtn" hidden aria-label="時間でたまる宝箱を開ける"><svg class="ico"><use href="#i-chest"/></svg>宝箱 <b id="chestN"></b><span class="cbar"><i id="chestF"></i></span><span class="dot" id="chestDot" hidden>!</span></button></div></div>
+  <div class="placerow"><div class="place"><span id="pname"></span><small id="ename"></small></div><div class="prr"><div class="timer" id="timer" hidden></div><button class="mpill" id="mBtn" hidden><svg class="ico"><use href="#i-check"/></svg>ミッション <b id="mCnt"></b><span class="dot" id="mDot" hidden></span></button><button class="mpill" id="rkBtn" hidden><svg class="ico"><use href="#i-star"/></svg>ランキング</button><button class="mpill chest" id="chestBtn" hidden aria-label="時間でたまる宝箱を開ける"><svg class="ico"><use href="#i-chest"/></svg>宝箱 <b id="chestN"></b><span class="cbar"><i id="chestF"></i></span><span class="dot" id="chestDot" hidden>!</span></button></div></div>
   <div class="runrow" id="runrow" hidden>拾ったどんぐり <b id="trun">0</b><span>クリアで持ち帰れる</span></div>
   <div class="hudmid" id="bars">
     <div class="bars">
@@ -913,7 +917,7 @@ const B={acts:[],pm:null,mode:"home",p:{x:480,y:720,fx:1,mv:false},php:100,sta:6
   sb:null,down:0,paused:false,newGear:0,pull:null};
 function recalc(){const r=B.php/(C.hp||1),s=B.sta/(C.stamax||1);C=calc();B.php=Math.min(C.hp,Math.max(1,r*C.hp));B.sta=Math.min(C.stamax,s*C.stamax)}
 function clearField(){B.gen++;B.zones=[];B.bcut=null;B.acts=[];B.pm=null;B.es=[];B.ps=[];B.eps=[];B.rings=[];B.tele=[];B.boss=null}
-function goHome(){B.mode="home";clearField();B.php=C.hp;B.sta=C.stamax;B.p.x=MW/2;B.p.y=790;CAM.x=B.p.x;CAM.y=B.p.y;B.down=0;leaveRoom();renderDock();hud();showLogin()}
+function goHome(){setTimeout(()=>rkSubmit(),0);B.mode="home";clearField();B.php=C.hp;B.sta=C.stamax;B.p.x=MW/2;B.p.y=790;CAM.x=B.p.x;CAM.y=B.p.y;B.down=0;leaveRoom();renderDock();hud();showLogin()}
 function startStage(n){if(S.tut<10){S.tut=1;TUT.mv=0}
   B.mode="stage";B.stage=n;B.kills=0;B.clk=0;B.endless=0;B.need=killsNeed(n);B.run=0;clearField();B.php=C.hp;B.sta=C.stamax;B.pt=0;B.sk=0;B.down=0;
   B.p.x=MW/2;B.p.y=MH*.6;CAM.x=B.p.x;CAM.y=B.p.y;B.spT=.2;spawnPack(S.tut<10?4:10);
@@ -1037,7 +1041,7 @@ function defeat(){
 const TOWER_KILLS=25;
 function startEndless(){if(S.clr<5)return;startStage(Math.max(0,S.clr-5));B.endless=1;B.floor=1;B.need=TOWER_KILLS;B.ban={t:"百鬼夜行 1階",l:1.6,c:"#d9c6ff"}}
 function floorUp(){B.floor++;B.stage++;B.kills=0;B.need=TOWER_KILLS;B.boss=null;B.php=Math.min(C.hp,B.php+C.hp*.2);B.ban={t:`百鬼夜行 ${B.floor}階`,l:1.4,c:"#d9c6ff"};sfx("up")}
-function endEndless(walked){const f=B.floor,got=B.run,best=S.tower.best||0;S.rune+=got;
+function endEndless(walked){setTimeout(()=>rkSubmit(),0);const f=B.floor,got=B.run,best=S.tower.best||0;S.rune+=got;
   const lines=[`${f}階まで進んだ`,`拾ったどんぐり ${fmt(got)} を持ち帰った`];
   if(f>best){const sh=(f-best)*5;S.tower.best=f;S.shard+=sh;lines.push(`最高記録を更新! こんぺいとう +${sh}`)}else lines.push(`最高記録は ${best}階`);
   B.mode="result";B.endless=0;clearField();save();sfx(f>best?"clear":"lose");showResult(walked?"ひと休み":"百鬼夜行、ここまで",`百鬼夜行 ${f}階`,lines,f>best)}
@@ -2002,7 +2006,7 @@ function hud(){
 }
 function renderDock(){
   const home=B.mode==="home",inb=B.mode==="stage"||B.mode==="strong";
-  $("navHome").hidden=!home;$("mBtn").hidden=!home;$("chestBtn").hidden=!home;mDot();$("navBattle").hidden=!inb;$("dodgeBtn").hidden=!inb;
+  $("navHome").hidden=!home;$("mBtn").hidden=!home;$("rkBtn").hidden=!home;$("chestBtn").hidden=!home;mDot();$("navBattle").hidden=!inb;$("dodgeBtn").hidden=!inb;
   if(home){$("prev").disabled=S.sel<=0;$("next").disabled=S.sel>=S.clr;$("go").innerHTML=`出発!<small>${stName(S.sel)} ${stRealm(S.sel).n}${S.sel<S.clr?" "+starTxt(S.stars[S.sel]||0):""}</small>`}
   $("dock").classList.toggle("dim",B.mode==="result");
   $("app").classList.toggle("inb",inb);if(renderDock.m!==B.mode){renderDock.m=B.mode;setTimeout(()=>{try{resize()}catch(e){}})} /* right after this update, once the HUD shows what this screen shows */
@@ -2024,7 +2028,7 @@ function showResult(title,sub,lines,win,go){
 }
 
 /* ================= panels ================= */
-let tab=null;const TABN={stat:"能力",wep:"武器",arm:"防具",rel:"おたから",pet:"ペット",pray:"おみくじ",mission:"今日のミッション",char:"じぶん",boss:"強敵"};
+let tab=null;const TABN={stat:"能力",wep:"武器",arm:"防具",rel:"おたから",pet:"ペット",pray:"おみくじ",mission:"今日のミッション",char:"じぶん",boss:"強敵",rank:"ランキング"};
 const panel=$("panel");
 function openTab(t){tab=t===tab?null:t;document.querySelectorAll(".tabs button").forEach(x=>{x.setAttribute("aria-selected",x.dataset.t===tab);if(x.dataset.t===tab)try{x.scrollIntoView({block:"nearest",inline:"nearest"})}catch(e){}});$("sheet").hidden=!tab;
   if(tab==="wep"||tab==="arm"){B.newGear=0;gearDot()}if(tab){$("sheet").scrollTop=0;render()}updPause()}
@@ -2033,9 +2037,51 @@ function updPause(){B.paused=!!tab&&(B.mode==="stage"||(B.mode==="strong"&&!RD.r
 document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(b)openTab(b.dataset.t)});
 $("close").onclick=()=>closeSheet();
 $("mBtn").onclick=()=>openTab("mission");
+$("rkBtn").onclick=()=>openTab("rank");
 const sgn=(v,f)=>(v>=0?"+":"−")+(f?f(Math.abs(v)):Math.abs(v));
+/* ================= ranking: the highest 百鬼夜行 floor and the best 総合力. On claude.ai each signed-in
+   person keeps one record in the artifact's shared store (others can read it, only they write it); on the public
+   site a small Supabase table does, with an anonymous sign-in so each player writes only their own row. With
+   neither, the panel shows your own bests ================= */
+const RK={kind:"floor",be:undefined,list:null,at:0,mine:null,err:"",ro:false,sent:"",st:0};
+const rkEsc=t=>String(t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
+const rkBest=()=>{const f=S.tower&&S.tower.best||0,p=Math.round(Math.max(S.pbest||0,C.power||0));if(p>(S.pbest||0))S.pbest=p;return{floor:f,power:p}};
+function rkLoad(src){return new Promise((ok,no)=>{const e=document.createElement("script");e.src=src;e.onload=ok;e.onerror=no;document.head.appendChild(e)})}
+let rkInit=null;
+function rkBackend(){return rkInit||(rkInit=(async()=>{
+  /* claude.ai: the artifact's db, one document per person at ranks/<their id> */
+  try{const cl=window.claude;if(cl&&cl.use){const[db,us]=await Promise.all([cl.use("db"),cl.use("user")]);const id=us&&await us.id();
+    if(db&&id)return{id,
+      put:r=>db.doc("ranks/"+id).set(r),
+      top:async k=>(await db.collection("ranks").orderBy(k,"desc").limit(50).get()).docs.map(d=>({...d.data(),me:d.id===id})),
+      above:async(k,v)=>(await db.collection("ranks").where(k,">",v).get()).size}}}catch(e){}
+  /* public site: Supabase, set up by window.RANK_CFG */
+  const cf=window.RANK_CFG;if(!cf||!cf.url||!cf.key)return null;
+  try{if(!window.supabase)await rkLoad("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js");
+    const sb=window.supabase.createClient(cf.url,cf.key);let ses=(await sb.auth.getSession()).data.session;
+    if(!ses){const r=await sb.auth.signInAnonymously();if(r.error)throw r.error;ses=r.data.session}const id=ses.user.id,ck=r=>{if(r.error)throw r.error;return r};
+    return{id,
+      put:async r=>{ck(await sb.from("ranking").upsert({id,name:r.nm,floor:r.floor,power:r.power,updated_at:new Date().toISOString()}))},
+      top:async k=>ck(await sb.from("ranking").select("id,name,floor,power").order(k,{ascending:false}).limit(50)).data.map(d=>({nm:d.name,floor:d.floor,power:d.power,me:d.id===id})),
+      above:async(k,v)=>ck(await sb.from("ranking").select("id",{count:"exact",head:true}).gt(k,v)).count}}
+  catch(e){RK.err="ランキングにつながりませんでした。あとでもう一度開いてみてね";return null}})())}
+/* send your bests when they change (at most every 20 s); a viewer who may only read gets a quiet read-only panel */
+async function rkSubmit(force){const be=await rkBackend();if(!be||RK.ro)return;const b=rkBest(),key=b.floor+"/"+b.power+"/"+S.nm;
+  if(!force&&(key===RK.sent||Date.now()-RK.st<20000))return;RK.st=Date.now();
+  try{await be.put({nm:S.nm,floor:b.floor,power:b.power,t:Date.now()});RK.sent=key;RK.at=0}catch(e){RK.ro=true}}
+async function rkFetch(){const be=await rkBackend();if(!be){RK.list=[];RK.at=Date.now();RK.loading=0;if(tab==="rank")render();return}
+  try{const k=RK.kind,b=rkBest();const[list,n]=await Promise.all([be.top(k),be.above(k,b[k])]);RK.list=list;RK.mine=n+1;RK.at=Date.now();RK.err=""}catch(e){RK.list=[];RK.at=Date.now();RK.err="ランキングを読みこめませんでした"}
+  if(tab==="rank")render()}
+function rRank(){const b=rkBest(),k=RK.kind,unit=k==="floor"?"階":"";
+  if(!RK.loading&&(RK.list===null||Date.now()-RK.at>20000)){RK.loading=1;rkSubmit(true).finally(()=>rkFetch().finally(()=>RK.loading=0))}
+  const rows=(RK.list||[]).map((r,i)=>`<div class="item rkrow${r.me?" me":""}"><div><h3><b class="rkn">${i+1}</b> ${rkEsc(r.nm||"ななし")}${r.me?" (あなた)":""}</h3></div><div class="rkv">${fmt(r[k]||0)}${unit}</div></div>`).join("");
+  panel.innerHTML=`<div class="gbar" role="group" aria-label="ランキングの種類"><button class="chipb" data-rk="floor" aria-pressed="${k==="floor"}">百鬼夜行の最高階</button><button class="chipb" data-rk="power" aria-pressed="${k==="power"}">総合力</button></div>
+  <div class="item rkrow me"><div><h3>あなた:${rkEsc(S.nm)}</h3><p>名前は「じぶん」で変えられます${RK.mine&&RK.list&&RK.list.length?` ・ いま ${RK.mine}位`:""}</p></div><div class="rkv">${fmt(b[k])}${unit}</div></div>
+  ${RK.err?`<p class="note">${RK.err}</p>`:""}${RK.ro?'<p class="note">このページでは記録を見ることだけできます。</p>':""}
+  ${RK.list===null?'<p class="empty">読みこみ中…</p>':rows||(RK.be===null?'<p class="empty">ここではランキングにつながっていません。自分の記録だけ表示しています。</p>':'<p class="empty">まだだれも記録していません。</p>')}`;
+  rkBackend().then(be=>{if(RK.be===undefined){RK.be=be;if(tab==="rank"&&!be)render()}})}
 function render(){if(!tab)return;$("sheetT").textContent=TABN[tab];$("foot").hidden=tab!=="char";
-  ({stat:rStat,wep:rWep,arm:rArm,rel:rRel,pet:rPet,pray:rPray,mission:rMission,char:rChar,boss:rBoss})[tab]();lastCost=0;hud()}
+  ({stat:rStat,wep:rWep,arm:rArm,rel:rRel,pet:rPet,pray:rPray,mission:rMission,char:rChar,boss:rBoss,rank:rRank})[tab]();lastCost=0;hud()}
 function changed(){recalc();render();save();hud()}
 const stars=n=>"★".repeat(n);
 
@@ -2169,7 +2215,7 @@ function rBoss(){
       ${ROOM&&ok?`<button data-sbc="${i}" data-t="${k}">仲間と挑む</button>`:""}</div>`}).join("")}</div>`}</div></div>`}).join("")}`;
 }
 
-panel.addEventListener("click",e=>{
+panel.addEventListener("click",e=>{{const rb=e.target.closest("[data-rk]");if(rb){RK.kind=rb.dataset.rk;RK.list=null;render();return}}
   const b=e.target.closest("button");if(!b||b.disabled)return;const d=b.dataset;
   if(b.id==="lvup"){const c=lvCost(S.lv);if(S.rune>=c){S.rune-=c;S.lv++;sfx("up");track("lv")}}
   else if(b.id==="lvmax"){sfx("up");let k=0;while(S.rune>=lvCost(S.lv)&&k<500){S.rune-=lvCost(S.lv);S.lv++;k++}if(k)track("lv",k)}
