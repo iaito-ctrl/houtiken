@@ -1,0 +1,30 @@
+{
+  "name": "放置バトル",
+  "short_name": "放置バトル",
+  "description": "妖怪の宿場町を拠点に、仲間の動物たちと妖怪をなぎ倒す放置バトル。スマホでそのまま遊べます。",
+  "lang": "ja",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5ecd6",
+  "theme_color": "#f5ecd6",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
